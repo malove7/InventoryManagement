@@ -6,7 +6,12 @@
       "Bash(dotnet tool *)",
       "Bash(dotnet ef *)",
       "Bash(dotnet build *)",
-      "Bash(timeout 12 dotnet run)"
+      "Bash(timeout 12 dotnet run)",
+      "Bash(dotnet sln *)",
+      "Read(//mnt/c/Claude/**)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
