@@ -1,0 +1,112 @@
+@model IEnumerable<InventoryApp.Models.Product>
+@{
+    ViewData["Title"] = "Products";
+    var categories = ViewBag.Categories as List<InventoryApp.Models.Category> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h5 class="mb-0 fw-semibold">All Products</h5>
+        <small class="text-muted">@Model.Count() product(s) found</small>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Add Product
+    </a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            <div class="col-sm-4">
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Search name or SKU..." />
+            </div>
+            <div class="col-sm-3">
+                <select name="categoryId" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    @foreach (var c in categories)
+                    {
+                        <option value="@c.Id" selected="@(ViewBag.CategoryId?.ToString() == c.Id.ToString())">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <select name="stockFilter" class="form-select form-select-sm">
+                    <option value="">All Stock Levels</option>
+                    <option value="low" selected="@(ViewBag.StockFilter == "low")">Low Stock</option>
+                    <option value="out" selected="@(ViewBag.StockFilter == "out")">Out of Stock</option>
+                </select>
+            </div>
+            <div class="col-sm-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i></button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td class="fw-medium">@p.Name</td>
+                        <td><code class="text-muted">@(p.SKU ?? "-")</code></td>
+                        <td><span class="badge bg-light text-dark">@p.Category?.Name</span></td>
+                        <td>$@p.Price.ToString("N2")</td>
+                        <td>@p.Quantity</td>
+                        <td>$@p.TotalValue.ToString("N2")</td>
+                        <td>
+                            @if (p.Quantity == 0)
+                            {
+                                <span class="badge badge-out">Out of Stock</span>
+                            }
+                            else if (p.IsLowStock)
+                            {
+                                <span class="badge badge-low">Low Stock</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-ok">In Stock</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary" title="Details">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-box fs-2 d-block mb-2"></i>
+                            No products found.
+                            <a asp-action="Create">Add your first product</a>.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

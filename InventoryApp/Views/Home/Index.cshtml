@@ -1,0 +1,157 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var lowStockItems = ViewBag.LowStockItems as List<InventoryApp.Models.Product> ?? new();
+    var recentProducts = ViewBag.RecentProducts as List<InventoryApp.Models.Product> ?? new();
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 d-flex flex-row align-items-center gap-3">
+            <div class="icon-wrap" style="background:#ede9fe"><i class="bi bi-box" style="color:#7c3aed"></i></div>
+            <div>
+                <div class="text-muted small">Total Products</div>
+                <div class="fs-4 fw-bold">@ViewBag.TotalProducts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 d-flex flex-row align-items-center gap-3">
+            <div class="icon-wrap" style="background:#dbeafe"><i class="bi bi-tags" style="color:#2563eb"></i></div>
+            <div>
+                <div class="text-muted small">Categories</div>
+                <div class="fs-4 fw-bold">@ViewBag.TotalCategories</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 d-flex flex-row align-items-center gap-3">
+            <div class="icon-wrap" style="background:#d1fae5"><i class="bi bi-currency-dollar" style="color:#059669"></i></div>
+            <div>
+                <div class="text-muted small">Stock Value</div>
+                <div class="fs-4 fw-bold">$@string.Format("{0:N2}", ViewBag.TotalStockValue)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 d-flex flex-row align-items-center gap-3">
+            <div class="icon-wrap" style="background:#fef3c7"><i class="bi bi-exclamation-triangle" style="color:#d97706"></i></div>
+            <div>
+                <div class="text-muted small">Low Stock Alerts</div>
+                <div class="fs-4 fw-bold">@ViewBag.LowStockCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card p-0">
+            <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold">Recently Added Products</h6>
+                <a asp-controller="Product" asp-action="Index" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in recentProducts)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Product" asp-action="Details" asp-route-id="@p.Id" class="text-decoration-none fw-medium">@p.Name</a>
+                                    @if (!string.IsNullOrEmpty(p.SKU))
+                                    {
+                                        <br /><small class="text-muted">@p.SKU</small>
+                                    }
+                                </td>
+                                <td><span class="badge bg-light text-dark">@p.Category?.Name</span></td>
+                                <td>$@p.Price.ToString("N2")</td>
+                                <td>@p.Quantity</td>
+                                <td>
+                                    @if (p.Quantity == 0)
+                                    {
+                                        <span class="badge badge-out">Out</span>
+                                    }
+                                    else if (p.IsLowStock)
+                                    {
+                                        <span class="badge badge-low">Low</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-ok">OK</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @if (!recentProducts.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-4">No products yet. <a asp-controller="Product" asp-action="Create">Add one</a>.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header bg-white border-0 pt-3 px-3">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Low Stock Alerts</h6>
+            </div>
+            @if (lowStockItems.Any())
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in lowStockItems)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-medium">@p.Name</div>
+                                <small class="text-muted">Threshold: @p.LowStockThreshold</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge @(p.Quantity == 0 ? "badge-out" : "badge-low") rounded-pill">@p.Quantity left</span>
+                                <br /><a asp-controller="Product" asp-action="Details" asp-route-id="@p.Id" class="small text-primary">Adjust</a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="card-body text-center text-muted">
+                    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                    <p class="mt-2 mb-0">All stock levels are healthy.</p>
+                </div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white border-0 pt-3 px-3">
+                <h6 class="mb-0 fw-semibold">Products by Category</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                @{
+                    var cats = ViewBag.CategoryBreakdown as System.Collections.IEnumerable;
+                    if (cats != null)
+                    {
+                        foreach (dynamic cat in cats)
+                        {
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>@cat.Name</span>
+                                <span class="badge bg-secondary rounded-pill">@cat.Count</span>
+                            </li>
+                        }
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+</div>
