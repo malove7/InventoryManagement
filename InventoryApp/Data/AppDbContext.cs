@@ -9,9 +9,15 @@ public class AppDbContext : DbContext
 
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<InventoryHistory> InventoryHistories => Set<InventoryHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<InventoryHistory>()
+            .Property(h => h.ChangeType)
+            .HasConversion<string>();
+
+
         modelBuilder.Entity<Category>().HasData(
             new Category { Id = 1, Name = "Electronics", Description = "Electronic devices and accessories", CreatedAt = new DateTime(2026, 1, 1) },
             new Category { Id = 2, Name = "Office Supplies", Description = "Stationery and office essentials", CreatedAt = new DateTime(2026, 1, 1) },

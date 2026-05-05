@@ -63,6 +63,39 @@ namespace InventoryApp.Migrations
                         });
                 });
 
+            modelBuilder.Entity("InventoryApp.Models.InventoryHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ChangeType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NewQuantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PreviousQuantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("InventoryHistories");
+                });
+
             modelBuilder.Entity("InventoryApp.Models.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -155,6 +188,17 @@ namespace InventoryApp.Migrations
                             SKU = "FURN-001",
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
+                });
+
+            modelBuilder.Entity("InventoryApp.Models.InventoryHistory", b =>
+                {
+                    b.HasOne("InventoryApp.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("InventoryApp.Models.Product", b =>

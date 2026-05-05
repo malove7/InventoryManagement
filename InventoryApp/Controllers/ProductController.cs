@@ -42,6 +42,20 @@ public class ProductController : Controller
         return View(product);
     }
 
+    public async Task<IActionResult> History(int id)
+    {
+        var product = await _db.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id);
+        if (product == null) return NotFound();
+
+        var history = await _db.InventoryHistories
+            .Where(h => h.ProductId == id)
+            .OrderByDescending(h => h.ChangedAt)
+            .ToListAsync();
+
+        ViewBag.Product = product;
+        return View(history);
+    }
+
     public async Task<IActionResult> Create()
     {
         await PopulateCategoriesAsync();
@@ -60,6 +74,21 @@ public class ProductController : Controller
         product.UpdatedAt = DateTime.UtcNow;
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
+
+        if (product.Quantity > 0)
+        {
+            _db.InventoryHistories.Add(new InventoryHistory
+            {
+                ProductId = product.Id,
+                ChangeType = InventoryChangeType.InitialStock,
+                PreviousQuantity = 0,
+                NewQuantity = product.Quantity,
+                Reason = "Product created",
+                ChangedAt = product.CreatedAt
+            });
+            await _db.SaveChangesAsync();
+        }
+
         TempData["Success"] = $"Product \"{product.Name}\" added successfully.";
         return RedirectToAction(nameof(Index));
     }
@@ -81,10 +110,36 @@ public class ProductController : Controller
             await PopulateCategoriesAsync(product.CategoryId);
             return View(product);
         }
-        product.UpdatedAt = DateTime.UtcNow;
-        _db.Products.Update(product);
+
+        var existing = await _db.Products.FindAsync(id);
+        if (existing == null) return NotFound();
+
+        var oldQty = existing.Quantity;
+
+        existing.Name = product.Name;
+        existing.SKU = product.SKU;
+        existing.Description = product.Description;
+        existing.Price = product.Price;
+        existing.Quantity = product.Quantity;
+        existing.LowStockThreshold = product.LowStockThreshold;
+        existing.CategoryId = product.CategoryId;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        if (oldQty != product.Quantity)
+        {
+            _db.InventoryHistories.Add(new InventoryHistory
+            {
+                ProductId = id,
+                ChangeType = InventoryChangeType.ManualEdit,
+                PreviousQuantity = oldQty,
+                NewQuantity = product.Quantity,
+                Reason = "Quantity updated via product edit",
+                ChangedAt = DateTime.UtcNow
+            });
+        }
+
         await _db.SaveChangesAsync();
-        TempData["Success"] = $"Product \"{product.Name}\" updated successfully.";
+        TempData["Success"] = $"Product \"{existing.Name}\" updated successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -107,19 +162,32 @@ public class ProductController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> AdjustStock(int id, int adjustment, string reason)
+    public async Task<IActionResult> AdjustStock(int id, int adjustment, string? reason)
     {
         var product = await _db.Products.FindAsync(id);
         if (product == null) return NotFound();
 
-        var newQty = product.Quantity + adjustment;
+        var oldQty = product.Quantity;
+        var newQty = oldQty + adjustment;
         if (newQty < 0)
         {
             TempData["Error"] = "Stock cannot go below zero.";
             return RedirectToAction(nameof(Details), new { id });
         }
+
         product.Quantity = newQty;
         product.UpdatedAt = DateTime.UtcNow;
+
+        _db.InventoryHistories.Add(new InventoryHistory
+        {
+            ProductId = id,
+            ChangeType = InventoryChangeType.StockAdjustment,
+            PreviousQuantity = oldQty,
+            NewQuantity = newQty,
+            Reason = string.IsNullOrWhiteSpace(reason) ? null : reason,
+            ChangedAt = DateTime.UtcNow
+        });
+
         await _db.SaveChangesAsync();
         TempData["Success"] = $"Stock adjusted by {(adjustment >= 0 ? "+" : "")}{adjustment}. New quantity: {newQty}.";
         return RedirectToAction(nameof(Details), new { id });
