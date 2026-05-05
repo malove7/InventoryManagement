@@ -1,0 +1,81 @@
+@model IEnumerable<InventoryApp.Models.InventoryHistory>
+@using InventoryApp.Models
+@{
+    var product = (Product)ViewBag.Product;
+    ViewData["Title"] = $"History – {product.Name}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 fw-semibold">Inventory History</h4>
+    <div class="d-flex gap-2">
+        <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Details
+        </a>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2 px-4">
+        <span class="fw-semibold">@product.Name</span>
+        @if (!string.IsNullOrEmpty(product.SKU))
+        {
+            <span class="text-muted ms-2"><code>@product.SKU</code></span>
+        }
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No inventory history recorded for this product.</div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Change Type</th>
+                        <th class="text-end">Previous Qty</th>
+                        <th class="text-end">New Qty</th>
+                        <th class="text-end">Change</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        var delta = entry.NewQuantity - entry.PreviousQuantity;
+                        <tr>
+                            <td class="text-nowrap">@entry.ChangedAt.ToString("MMM d, yyyy h:mm tt")</td>
+                            <td>
+                                @switch (entry.ChangeType)
+                                {
+                                    case InventoryChangeType.InitialStock:
+                                        <span class="badge bg-primary">Initial Stock</span>
+                                        break;
+                                    case InventoryChangeType.ManualEdit:
+                                        <span class="badge bg-secondary">Manual Edit</span>
+                                        break;
+                                    case InventoryChangeType.StockAdjustment:
+                                        <span class="badge bg-info text-dark">Stock Adjustment</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-light text-dark">@entry.ChangeType</span>
+                                        break;
+                                }
+                            </td>
+                            <td class="text-end">@entry.PreviousQuantity</td>
+                            <td class="text-end">@entry.NewQuantity</td>
+                            <td class="text-end @(delta > 0 ? "text-success" : delta < 0 ? "text-danger" : "")">
+                                @(delta > 0 ? $"+{delta}" : delta.ToString())
+                            </td>
+                            <td class="text-muted">@(entry.Reason ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
