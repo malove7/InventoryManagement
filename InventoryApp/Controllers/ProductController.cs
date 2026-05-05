@@ -198,6 +198,32 @@ public class ProductController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    public async Task<IActionResult> StockReport(int? categoryId, string? statusFilter)
+    {
+        var query = _db.Products.Include(p => p.Category).AsQueryable();
+
+        if (categoryId.HasValue)
+            query = query.Where(p => p.CategoryId == categoryId);
+
+        if (statusFilter == "low")
+            query = query.Where(p => p.Quantity > 0 && p.Quantity <= p.LowStockThreshold);
+        else if (statusFilter == "out")
+            query = query.Where(p => p.Quantity == 0);
+
+        var products = await query.OrderBy(p => p.Category!.Name).ThenBy(p => p.Name).ToListAsync();
+
+        ViewBag.CategoryId = categoryId;
+        ViewBag.StatusFilter = statusFilter;
+        ViewBag.Categories = await _db.Categories.OrderBy(c => c.Name).ToListAsync();
+        ViewBag.TotalProducts = products.Count;
+        ViewBag.TotalUnits = products.Sum(p => p.Quantity);
+        ViewBag.TotalValue = products.Sum(p => p.TotalValue);
+        ViewBag.LowStockCount = products.Count(p => p.Quantity > 0 && p.Quantity <= p.LowStockThreshold);
+        ViewBag.OutOfStockCount = products.Count(p => p.Quantity == 0);
+
+        return View(products);
+    }
+
     private async Task PopulateCategoriesAsync(int? selectedId = null)
     {
         var categories = await _db.Categories.OrderBy(c => c.Name).ToListAsync();
