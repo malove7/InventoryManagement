@@ -72,6 +72,9 @@ public class ProductController : Controller
         }
         product.CreatedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
@@ -88,6 +91,8 @@ public class ProductController : Controller
             });
             await _db.SaveChangesAsync();
         }
+
+        await tx.CommitAsync();
 
         TempData["Success"] = $"Product \"{product.Name}\" added successfully.";
         return RedirectToAction(nameof(Index));
