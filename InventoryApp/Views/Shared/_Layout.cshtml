@@ -106,6 +106,13 @@
                 <i class="bi bi-tags"></i> Categories
             </a>
         </nav>
+        <div class="nav-section">Reports</div>
+        <nav class="nav flex-column">
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" && ViewContext.RouteData.Values["action"]?.ToString() == "StockReport" ? "active" : "")"
+               asp-controller="Product" asp-action="StockReport">
+                <i class="bi bi-clipboard-data"></i> Current Stock
+            </a>
+        </nav>
         <div class="nav-section">Quick Actions</div>
         <nav class="nav flex-column">
             <a class="nav-link" asp-controller="Product" asp-action="Create">

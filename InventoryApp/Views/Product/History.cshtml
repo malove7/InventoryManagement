@@ -1,0 +1,70 @@
+@model IEnumerable<InventoryApp.Models.InventoryHistory>
+@{
+    var product = ViewBag.Product as InventoryApp.Models.Product;
+    ViewData["Title"] = $"History – {product?.Name}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h5 class="mb-0 fw-semibold">Inventory History</h5>
+        <small class="text-muted">@product?.Name</small>
+    </div>
+    <a asp-action="Details" asp-route-id="@product?.Id" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Details
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Change Type</th>
+                    <th>Previous Qty</th>
+                    <th>New Qty</th>
+                    <th>Change</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in Model)
+                {
+                    var delta = entry.NewQuantity - entry.PreviousQuantity;
+                    <tr>
+                        <td>@entry.ChangedAt.ToString("MMM d, yyyy h:mm tt")</td>
+                        <td>
+                            @switch (entry.ChangeType)
+                            {
+                                case InventoryApp.Models.InventoryChangeType.InitialStock:
+                                    <span class="badge bg-primary">Initial Stock</span>
+                                    break;
+                                case InventoryApp.Models.InventoryChangeType.ManualEdit:
+                                    <span class="badge bg-secondary">Manual Edit</span>
+                                    break;
+                                case InventoryApp.Models.InventoryChangeType.StockAdjustment:
+                                    <span class="badge bg-info text-dark">Stock Adjustment</span>
+                                    break;
+                            }
+                        </td>
+                        <td>@entry.PreviousQuantity</td>
+                        <td>@entry.NewQuantity</td>
+                        <td class="@(delta >= 0 ? "text-success" : "text-danger") fw-semibold">
+                            @(delta >= 0 ? "+" : "")@delta
+                        </td>
+                        <td class="text-muted">@(entry.Reason ?? "—")</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-clock-history fs-2 d-block mb-2"></i>
+                            No history records found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
